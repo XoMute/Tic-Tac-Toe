@@ -36,7 +36,7 @@
      (nth (third triplet) board)))
 
 (defun compute-sums (board)
-  (mapcar (lambda (triplet) (sum-triplet board triplet)) *triplets*))
+  (mapcar #'(lambda (triplet) (sum-triplet board triplet)) *triplets*))
 
 (defun winner-p (board)
   (let ((sums (compute-sums board)))
@@ -97,7 +97,9 @@
 	  (T pos))))
 
 (defun choose-best-move (board)
-  (random-move-strategy board))
+  (or (make-three-in-a-row board)
+      (block-opponent-win board)
+      (random-move-strategy board)))
 
 (defun random-move-strategy (board)
   (list (pick-random-empty-position board) "random move"))
@@ -107,3 +109,24 @@
     (if (zerop (nth pos board))
 	pos
 	(pick-random-empty-position board))))
+
+(defun make-three-in-a-row (board)
+  (let ((pos (win-or-block board 
+			   (* 2 *computer*))))
+    (and pos (list pos "make 3 in a row"))))
+
+(defun block-opponent-win (board)
+  (let ((pos (win-or-block board 
+			   (* 2 *opponent*))))
+    (and pos (list pos "block opponent"))))
+
+(defun win-or-block (board target-sum)
+  (let ((triplet (find-if #'(lambda (trip) (equal (sum-triplet board trip) 
+						target-sum))
+			  *triplets*)))
+    (when triplet
+      (find-empty-position board triplet))))
+
+(defun find-empty-position (board squares)
+  (find-if #'(lambda (pos) (zerop (nth pos board)))
+	   squares))
